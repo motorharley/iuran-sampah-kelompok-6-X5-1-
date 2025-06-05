@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Aplikasi Pembayaran Iuran Sampah</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .section {
+            background-color: #ffffff;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input, select, button {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: center;
+        }
+        th {
+            background-color: #eaf1fb;
+        }
+        .notif {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .notif.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .notif.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .action-btn {
+            width: auto;
+            margin: 0 2px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Aplikasi Pembayaran Iuran Sampah</h1>
+
+    <!-- Input Data Warga -->
+    <div class="section">
+        <h2>1. Input Data Warga</h2>
+        <input type="number" id="idInput" placeholder="Masukkan ID Warga">
+        <input type="text" id="namaInput" placeholder="Masukkan Nama Warga">
+        <button onclick="tambahWarga()">Tambahkan Warga</button>
+        <div id="pesanTambah"></div>
+    </div>
+
+    <!-- Pembayaran -->
+    <div class="section">
+        <h2>2. Bayar Iuran Bulanan</h2>
+        <input type="number" id="idBayar" placeholder="Masukkan ID Warga">
+        <select id="bulanBayar">
+            <option value="">Pilih Bulan</option>
+        </select>
+        <button onclick="bayar()">Bayar</button>
+        <div id="pesanBayar"></div>
+    </div>
+
+    <!-- Cek Status -->
+    <div class="section">
+        <h2>3. Cek Status Pembayaran</h2>
+        <input type="number" id="idCek" placeholder="Masukkan ID Warga">
+        <select id="bulanCek">
+            <option value="">Pilih Bulan</option>
+        </select>
+        <button onclick="cekStatus()">Cek Status</button>
+        <div id="pesanCek"></div>
+    </div>
+
+    <!-- Daftar Warga & Status Pembayaran -->
+    <div class="section">
+        <h2>4. Daftar Warga & Status Pembayaran</h2>
+        <div style="overflow-x:auto;">
+            <table id="tabelWarga">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th colspan="12">Status Pembayaran</th>
+                        <th>Aksi</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>Mei</th><th>Jun</th>
+                        <th>Jul</th><th>Agu</th><th>Sep</th><th>Okt</th><th>Nov</th><th>Des</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="bodyTabelWarga"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Rekapitulasi & Export -->
+    <div class="section">
+        <h2>5. Rekapitulasi & Export Data</h2>
+        <button onclick="rekapitulasi()">Tampilkan Rekapitulasi</button>
+        <button onclick="exportCSV()">Export ke CSV</button>
+        <div id="rekap"></div>
+    </div>
+
+    <!-- Modal Edit -->
+    <div id="modalEdit" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3);">
+        <div style="background:#fff; padding:20px; border-radius:8px; width:300px; margin:100px auto; position:relative;">
+            <h3>Edit Data Warga</h3>
+            <input type="number" id="editId" disabled>
+            <input type="text" id="editNama">
+            <button onclick="simpanEdit()">Simpan</button>
+            <button onclick="tutupModal()" style="background:#ccc;color:#333;">Batal</button>
+        </div>
+    </div>
+
+    <script>
+    // Data bulan
+    const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+    // Inisialisasi select bulan
+    function isiSelectBulan() {
+        const selects = [document.getElementById('bulanBayar'), document.getElementById('bulanCek')];
+        selects.forEach(sel => {
+            if (sel.options.length < 13) {
+                bulan.forEach((b, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = b;
+                    sel.appendChild(opt);
+                });
+            }
+        });
+    }
+    isiSelectBulan();
+
+    // Ambil data dari localStorage
+    let warga = [];
+    if (localStorage.getItem('warga')) {
+        warga = JSON.parse(localStorage.getItem('warga'));
+    }
+
+    // Notifikasi
+    function notif(msg, tipe, id) {
+        const el = document.getElementById(id);
+        el.innerHTML = `<div class="notif ${tipe}">${msg}</div>`;
+        setTimeout(()=>{el.innerHTML=''}, 2500);
+    }
+
+    // Simpan ke localStorage
+    function simpan() {
+        localStorage.setItem('warga', JSON.stringify(warga));
+    }
+
+    // Tambah warga
+    function tambahWarga() {
+        const id = parseInt(document.getElementById('idInput').value);
+        const nama = document.getElementById('namaInput').value.trim();
+        if (!id || !nama) {
+            notif("ID dan Nama wajib diisi.", "error", "pesanTambah");
+            return;
+        }
+        if (warga.find(w => w.id === id)) {
+            notif("ID sudah terdaftar!", "error", "pesanTambah");
+            return;
+        }
+        if (!nama.match(/[a-zA-Z]/)) {
+            notif("Nama tidak valid.", "error", "pesanTambah");
+            return;
+        }
+        warga.push({ id, nama, pembayaran: Array(12).fill(0) });
+        simpan();
+        notif(`Warga ${nama} berhasil ditambahkan!`, "success", "pesanTambah");
+        document.getElementById('idInput').value = '';
+        document.getElementById('namaInput').value = '';
+        renderTabel();
+    }
+
+    // Bayar iuran
+    function bayar() {
+        const id = parseInt(document.getElementById('idBayar').value);
+        const bln = parseInt(document.getElementById('bulanBayar').value);
+        const wargaDitemukan = warga.find(w => w.id === id);
+        if (!wargaDitemukan || isNaN(bln)) {
+            notif("Data tidak valid.", "error", "pesanBayar");
+            return;
+        }
+        if (wargaDitemukan.pembayaran[bln]) {
+            notif("Sudah bayar bulan ini!", "error", "pesanBayar");
+            return;
+        }
+        wargaDitemukan.pembayaran[bln] = 1;
+        simpan();
+        notif(`Pembayaran bulan ${bulan[bln]} untuk ${wargaDitemukan.nama} berhasil.`, "success", "pesanBayar");
+        document.getElementById('idBayar').value = '';
+        document.getElementById('bulanBayar').value = '';
+        renderTabel();
+    }
+
+    // Cek status
+    function cekStatus() {
+        const id = parseInt(document.getElementById('idCek').value);
+        const bln = parseInt(document.getElementById('bulanCek').value);
+        const wargaDitemukan = warga.find(w => w.id === id);
+        if (!wargaDitemukan || isNaN(bln)) {
+            notif("Data tidak valid.", "error", "pesanCek");
+            return;
+        }
+        const status = wargaDitemukan.pembayaran[bln] ? "SUDAH BAYAR" : "BELUM BAYAR";
+        notif(`${wargaDitemukan.nama} ${status} iuran bulan ${bulan[bln]}.`, "success", "pesanCek");
+    }
+
+    // Render tabel warga
+    function renderTabel() {
+        let html = '';
+        warga.forEach((w, idx) => {
+            html += `<tr>
+                <td>${w.id}</td>
+                <td>${w.nama}</td>
+                ${w.pembayaran.map((p, i) => `<td style="color:${p?'green':'red'}">${p ? "✔️" : "❌"}</td>`).join('')}
+                <td>
+                    <button class="action-btn" onclick="editWarga(${idx})">Edit</button>
+                    <button class="action-btn" onclick="hapusWarga(${idx})">Hapus</button>
+                </td>
+            </tr>`;
+        });
+    }
