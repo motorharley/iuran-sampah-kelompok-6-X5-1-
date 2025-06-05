@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Aplikasi Pembayaran Iuran Sampah</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .section {
+            background-color: #ffffff;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input, select, button {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Aplikasi Pembayaran Iuran Sampah</h1>
+
+    <!-- Input Data Warga -->
+    <div class="section">
+        <h2>1. Input Data Warga</h2>
+        <input type="number" id="idInput" placeholder="Masukkan ID Warga">
+        <input type="text" id="namaInput" placeholder="Masukkan Nama Warga">
+        <button onclick="tambahWarga()">Tambahkan Warga</button>
+        <p id="pesanTambah"></p>
+    </div>
+
+    <!-- Pembayaran -->
+    <div class="section">
+        <h2>2. Bayar Iuran Bulanan</h2>
+        <input type="number" id="idBayar" placeholder="Masukkan ID Warga">
+        <select id="bulanBayar">
+            <option value="">Pilih Bulan</option>
+            <script>
+                const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                               "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                bulan.forEach((b, i) => {
+                    document.write(`<option value="${i}">${b}</option>`);
+                });
+            </script>
+        </select>
+        <button onclick="bayar()">Bayar</button>
+        <p id="pesanBayar"></p>
+    </div>
+
+    <!-- Cek Status -->
+    <div class="section">
+        <h2>3. Cek Status Pembayaran</h2>
+        <input type="number" id="idCek" placeholder="Masukkan ID Warga">
+        <select id="bulanCek">
+            <option value="">Pilih Bulan</option>
+            <script>
+                bulan.forEach((b, i) => {
+                    document.write(`<option value="${i}">${b}</option>`);
+                });
+            </script>
+        </select>
+        <button onclick="cekStatus()">Cek Status</button>
+        <p id="pesanCek"></p>
+    </div>
+
+    <script>
+        let warga = [];
+
+        function tambahWarga() {
+            const id = parseInt(document.getElementById('idInput').value);
+            const nama = document.getElementById('namaInput').value;
+            if (!id || !nama) {
+                alert("ID dan Nama wajib diisi.");
+                return;
+            }
+            if (warga.find(w => w.id === id)) {
+                alert("ID sudah terdaftar!");
+                return;
+            }
+            warga.push({ id, nama, pembayaran: Array(12).fill(0) });
+            document.getElementById('pesanTambah').innerText = `Warga ${nama} berhasil ditambahkan!`;
+        }
+
+        function bayar() {
+            const id = parseInt(document.getElementById('idBayar').value);
+            const bulan = parseInt(document.getElementById('bulanBayar').value);
+            const wargaDitemukan = warga.find(w => w.id === id);
+            if (!wargaDitemukan || isNaN(bulan)) {
+                alert("Data tidak valid.");
+                return;
+            }
+            wargaDitemukan.pembayaran[bulan] = 1;
+            document.getElementById('pesanBayar').innerText =
+                `Pembayaran bulan ${bulan + 1} untuk ${wargaDitemukan.nama} berhasil.`;
+        }
+
+        function cekStatus() {
+            const id = parseInt(document.getElementById('idCek').value);
+            const bulan = parseInt(document.getElementById('bulanCek').value);
+            const wargaDitemukan = warga.find(w => w.id === id);
+            if (!wargaDitemukan || isNaN(bulan)) {
+                alert("Data tidak valid.");
+                return;
+            }
+            const status = wargaDitemukan.pembayaran[bulan] ? "SUDAH BAYAR" : "BELUM BAYAR";
+            document.getElementById('pesanCek').innerText =
+                `${wargaDitemukan.nama} ${status} iuran bulan ${bulan + 1}.`;
+        }
+    </script>
+</body>
+</html>
